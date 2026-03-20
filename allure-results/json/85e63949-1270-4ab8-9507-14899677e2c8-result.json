@@ -1,0 +1,1 @@
+{"name": "Login page", "status": "passed", "description": "Login page", "parameters": [{"name": "browser_name", "value": "'chromium'"}], "start": 1774968229295, "stop": 1774968229304, "uuid": "bed12879-23ac-4b28-8d55-4f42c7965ef6", "testCaseId": "a5cdd46bcc2b244eb43a26df930e4f39", "fullName": "tests.ui.test_login#test_login_page"}
