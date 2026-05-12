@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: jenkins_universal
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      ci_network:
+        aliases:
+          - jenkins_host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok_universal
+    restart: always
+    environment:
+      - NGROK_AUTHTOKEN=3BDAVZalZX8SEbjC8Cbl9TbVaVR_3D1NLpPa7FFBNrQMJXyvA
+    entrypoint: [ "/bin/sh", "-c", "sleep 10 && ngrok http --url=lardy-spinier-cami.ngrok-free.dev jenkins:8080" ]
+    networks:
+      - ci_network
+    depends_on:
+      jenkins:
+        condition: service_started
+
+  mariadb:
+    image: mariadb:11.3
+    container_name: practice_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: practice_db
+      MARIADB_USER: practice_user
+      MARIADB_PASSWORD: practice_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - ci_network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  jenkins_home:
+    external: true
+  mariadb_data:
+
+networks:
+  ci_network:
+    driver: bridge
